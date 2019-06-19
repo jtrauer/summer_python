@@ -1,6 +1,5 @@
 
 import summer_model
-import numpy
 import matplotlib.pyplot
 import os
 
