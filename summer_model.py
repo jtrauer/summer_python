@@ -118,7 +118,7 @@ def create_flowchart(model_object, strata=-1, stratify=True, name="flow_chart"):
     # find input nodes and edges
     if stratify:
         input_nodes = model_object.compartment_names
-        type_of_flow = model_object.transition_flows[model_object.transition_flows.implement == strata] if strata else \
+        type_of_flow = model_object.transition_flows[model_object.transition_flows.implement == strata] if strata != -1 else \
             model_object.transition_flows[model_object.transition_flows.implement == len(model_object.strata)]
     else:
         input_nodes = model_object.compartment_types
