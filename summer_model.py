@@ -562,7 +562,9 @@ class EpiModel:
         store outputs from the model in sql database for use in producing outputs later
         """
         engine = create_engine("sqlite:///outputs.db", echo=False)
-        self.outputs.to_sql("outputs", con=engine, if_exists="replace", index=False)
+        output_df = pandas.DataFrame(self.outputs, columns=self.compartment_names)
+        output_df.insert(0, 'times', self.times)
+        output_df.to_sql("outputs", con=engine, if_exists="replace", index=False)
 
 
 class StratifiedModel(EpiModel):
