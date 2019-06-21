@@ -24,7 +24,7 @@ class InputDB:
             dataframe = pd.read_csv(filename)
             dataframe.to_sql(filename.split("\\")[1].split(".")[0], con=self.engine, if_exists="replace")
 
-    def load_xslx(self, input_path ="xls/*.xlsx"):
+    def load_xlsx(self, input_path ="xls/*.xlsx"):
         """
         load xslx from inputPath
         """
@@ -35,25 +35,36 @@ class InputDB:
                "notifications_2014", "notifications_2015", "notifications_2016", "outcomes_2013", "outcomes_2015",
                "mdr_2014", "mdr_2015", "mdr_2016", "laboratories_2014", "laboratories_2015", "laboratories_2016",
                "strategy_2014", "strategy_2015", "strategy_2016", "diabetes", "gtb_2015", "gtb_2016", "latent_2016",
-               "tb_hiv_2016", "spending_inputs"]
+               "tb_hiv_2016", "spending_inputs", "constants", "time_variants"]
 
         for filename in excelFileList:
             xls = pd.ExcelFile(filename)
 
             if len(xls.sheet_names) == 1:
+                # for single work sheets
                 df_name = xls.sheet_names[0]
+                df = pd.read_excel(filename, sheet_name=df_name)
+                df.to_sql(df_name, con=self.engine, if_exists="replace")
                 print(df_name)
             else:
                 numSheets = 0
                 while numSheets < len(xls.sheet_names):
                       sheet_name = xls.sheet_names[numSheets]
                       if sheet_name in available_sheets:
-                          if sheet_name == "rate_birth_2015" or sheet_name == "life_expectancy_2015" :
-                              df = pd.read_excel(filename, sheet_name=sheet_name, header = 3)
-                          else:
-                              df = pd.read_excel(filename, sheet_name=sheet_name)
-                          print(sheet_name)
-                          df.to_sql(sheet_name, con=self.engine, if_exists="replace")
+                            # set headers for rate_birth_2015 and life_expectancy_2015
+                            if sheet_name == "rate_birth_2015" or sheet_name == "life_expectancy_2015" :
+                                df = pd.read_excel(filename, sheet_name=sheet_name, header = 3)
+                            else:
+                                df = pd.read_excel(filename, sheet_name=sheet_name)
+                            print(sheet_name)
+
+                            # to read constants and time variants
+                            if sheet_name == 'constants':
+                                sheet_name = filename.replace('.xlsx', '').split('_')[1] + '_constants'
+                            if sheet_name == 'time_variants':
+                                sheet_name = filename.replace('.xlsx', '').split('_')[1] + '_time_variants'
+
+                            df.to_sql(sheet_name, con=self.engine, if_exists="replace")
                       numSheets = numSheets + 1
 
     def db_query(self, table_name, filter="", value="", column="*"):
@@ -70,9 +81,16 @@ class InputDB:
 if __name__ == "__main__":
 
     input = InputDB()
-    input.load_xslx()
+    input.load_xlsx()
     input.load_csv()
     res = input.db_query("bcg_2015", filter="Cname", value="Bhutan")
     print(res)
-    # res = input.db_query("notifications_2016", filter="Country", value="Bhutan")
-    # print(res)
+    res = input.db_query("notifications_2016", filter="Country", value="Bhutan")
+    print(res)
+    res = input.db_query("default_time_variants", filter="program", value="econ_cpi")
+    print(res)
+    res = input.db_query("bhutan_constants", filter="parameter", value="tb_n_contact")
+    print(res)
+    res = input.db_query("bhutan_time_variants", filter="program", value="int_perc_firstline_dst")
+    print(res.values)
+
